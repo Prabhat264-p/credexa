@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+:root {
+  /* Colors */
+  --color-bg: #FFFFFF;
+  --color-surface: #FAFAFA;
+  --color-surface-hover: #F5F5F5;
+  --color-text-main: #111111;
+  --color-text-secondary: #555555;
+  --color-text-muted: #888888;
+  --color-border: #E5E5E5;
+  --color-border-dark: #D4D4D8;
+  --color-blue: #2563EB;
+  --color-blue-hover: #1D4ED8;
+  --color-green: #16A34A;
+  --color-red: #E53935;
+  --color-amber: #D97706;
+
+  /* Typography Scale */
+  --font-body: 14px;
+  --font-small: 12px;
+  --font-label: 12px;
+  --font-h1: clamp(26px, 2.2vw, 34px);
+  --font-h2: clamp(20px, 1.8vw, 26px);
+  --font-h3: 18px;
+
+  /* Sizing Tokens */
+  --input-height: 44px;
+  --button-height: 44px;
+  --header-height: 64px;
+  --header-height-mobile: 56px;
+
+  /* Component Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Spacing System (8px-based rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout Container */
+  --container-max-width: 1280px;
+}
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--color-text-main);
+    background-color: var(--color-bg);
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Controlled Layout Container */
+.app-container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-inline: auto;
+  padding-inline: clamp(16px, 3vw, 32px);
+}
+
+/* Modal Responsive Overlay & Container */
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  padding: clamp(12px, 3vw, 24px);
+  overflow-y: auto;
+}
+
+.app-modal-content {
+  width: calc(100vw - 24px);
+  max-width: 960px;
+  max-height: calc(100dvh - 24px);
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border: 1px solid #111111;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .app-modal-content {
+    width: calc(100vw - 48px);
+    max-height: calc(100dvh - 48px);
+  }
+}
+
+/* Table Scroll Wrapper */
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* Swiss Grid & Card Utilities */
+.swiss-border {
+  border: 1px solid #E5E5E5;
+}
+
+.swiss-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 6px;
+}
+
+.swiss-card-hover {
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.swiss-card-hover:hover {
+  border-color: #D4D4D8;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.swiss-button-primary {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  font-weight: 600;
+  min-height: 44px;
+  border-radius: 6px;
+  transition: background-color 150ms ease;
+}
+
+.swiss-button-primary:hover {
+  background-color: #1D4ED8;
+}
+
+.swiss-button-secondary {
+  background-color: #FFFFFF;
+  color: #111111;
+  border: 1px solid #E5E5E5;
+  font-weight: 500;
+  min-height: 44px;
+  border-radius: 6px;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.swiss-button-secondary:hover {
+  background-color: #FAFAFA;
+  border-color: #D4D4D8;
+}
+
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAFAFA;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4D4D8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A1A1AA;
+}

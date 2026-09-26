@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  FINANCEE
+  FINANCER
+  ADMIN
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SUBMITTED
+  AI_AUDITING
+  AUDITED
+  ORACLE_VERIFIED
+  APPROVED
+  LISTED
+  FUNDING
+  FUNDED
+  REPAYMENT_PENDING
+  REPAID
+  DEFAULTED
+  DISPUTED
+}
+
+enum FactoringMode {
+  Recourse
+  NonRecourse
+}
+
+enum AuditProvider {
+  GEMINI
+  DEMO_HEURISTIC
+}
+
+enum InvestmentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  CANCELLED
+  REPAID
+  DEFAULTED
+}
+
+enum SolanaTxType {
+  INVOICE_ATTESTATION
+  INVESTMENT_ANCHOR
+  REPAYMENT_ANCHOR
+}
+
+enum SolanaTxStatus {
+  SUBMITTED
+  VERIFIED
+  FAILED
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  phone            String?
+  passwordHash     String
+  role             Role      @default(FINANCEE)
+  organizationName String?
+  organizationType String?
+  gstin            String?
+  walletAddress    String?
+  profileImage     String?
+  isVerified       Boolean   @default(true)
+  isDemo           Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lastLoginAt      DateTime?
+
+  invoices        Invoice[]           @relation("FinanceeInvoices")
+  investments     Investment[]        @relation("FinancerInvestments")
+  solanaTxs       SolanaTransaction[]
+  custodialWallet CustodialWallet?
+  auditEvents     AuditEvent[]
+  notifications   Notification[]
+}
+
+model CustodialWallet {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  publicAddress       String
+  encryptedPrivateKey String
+  network             String   @default("devnet")
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id                      String        @id @default(uuid())
+  invoiceNumber           String
+  financeeId              String
+  sellerName              String
+  sellerGstin             String
+  sellerLocation          String?
+  sellerWallet            String?
+  buyerName               String
+  buyerGstin              String
+  buyerWallet             String?
+  itemDescription         String?
+  hsnCode                 String?
+  ewayBillNumber          String?
+  poNumber                String?
+  irn                     String?
+  faceValueInr            Float
+  advanceRatePct          Float         @default(85.0)
+  financingTargetInr      Float?
+  fundedAmountInr         Float         @default(0)
+  discountRateBps         Int           @default(850)
+  tenureDays              Int           @default(90)
+  factoringMode           FactoringMode @default(Recourse)
+  status                  InvoiceStatus @default(DRAFT)
+  buyerConfirmationStatus String        @default("PENDING")
+  buyerConfirmedAt        DateTime?
+  buyerConfirmedBy        String?
+  disputeReason           String?
+  disputeComment          String?
+  token2022MintAddress    String?
+  token2022TxSignature    String?
+  canonicalHash           String?
+  maturityDate            String?
+  authenticityScore       Int           @default(90)
+  riskTier                String        @default("TIER_A")
+  oracleSignature         String?
+  oracleTimestamp         Int?
+  collateralLockedInr     Float         @default(0)
+  isDemo                  Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  financee          User               @relation("FinanceeInvoices", fields: [financeeId], references: [id], onDelete: Cascade)
+  documents         InvoiceDocument[]
+  aiAudit           AIAudit?
+  oracleAttestation OracleAttestation?
+  financingOffer    FinancingOffer?
+  investments       Investment[]
+  solanaTxs         SolanaTransaction[]
+  repayments        Repayment[]
+  auditEvents       AuditEvent[]
+}
+
+model InvoiceDocument {
+  id            String   @id @default(uuid())
+  invoiceId     String
+  fileName      String
+  fileType      String
+  fileSize      Int
+  documentUrl   String?
+  extractedData String?  
+  createdAt     DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model AIAudit {
+  id                       String        @id @default(uuid())
+  invoiceId                String        @unique
+  authenticityScore        Int
+  riskTier                 String
+  gstStatus                String
+  ewayBillStatus           String
+  buyerAssessment          String?
+  poInvoiceConsistency     String?
+  recommendedDiscountRate  Float
+  maximumAdvance           Float
+  juniorTrancheBuffer      Float
+  underwritingFlags        String        
+  explanation              String
+  provider                 AuditProvider @default(GEMINI)
+  createdAt                DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model OracleAttestation {
+  id                 String   @id @default(uuid())
+  invoiceId          String   @unique
+  canonicalPayload   String
+  payloadHash        String
+  publicKey          String
+  signature          String
+  timestamp          Int
+  verificationStatus String   @default("VERIFIED")
+  createdAt          DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model FinancingOffer {
+  id              String   @id @default(uuid())
+  invoiceId       String   @unique
+  maximumAdvance  Float
+  financingAmount Float
+  discountRate    Float
+  tenureDays      Int
+  seniorTranche   Float
+  juniorTranche   Float
+  riskTier        String
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model Investment {
+  id                    String           @id @default(uuid())
+  invoiceId             String
+  financerId            String
+  investorWalletAddress String?
+  amount                Float
+  currency              String           @default("INR")
+  tranche               String           @default("Senior")
+  status                InvestmentStatus @default(CONFIRMED)
+  solanaTxSignature     String?
+  explorerUrl           String?
+  repaymentAmount       Float?
+  repaidAt              DateTime?
+  fundedAt              DateTime         @default(now())
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  invoice    Invoice             @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  financer   User                @relation("FinancerInvestments", fields: [financerId], references: [id], onDelete: Cascade)
+  solanaTxs  SolanaTransaction[]
+  repayments Repayment[]
+}
+
+model SolanaTransaction {
+  id                   String         @id @default(uuid())
+  invoiceId            String?
+  investmentId         String?
+  userId               String?
+  walletAddress        String
+  network              String         @default("Solana Devnet")
+  transactionSignature String         @unique
+  transactionType      SolanaTxType   @default(INVOICE_ATTESTATION)
+  payloadHash          String?
+  status               SolanaTxStatus @default(VERIFIED)
+  slot                 Int?
+  blockTime            Int?
+  explorerUrl          String
+  createdAt            DateTime       @default(now())
+
+  invoice    Invoice?    @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Repayment {
+  id                 String   @id @default(uuid())
+  invoiceId          String
+  investmentId       String?
+  amount             Float
+  seniorDistribution Float
+  juniorDistribution Float
+  protocolFee        Float    @default(0)
+  earlyRebate        Float    @default(0)
+  status             String   @default("SIMULATED_REPAID")
+  simulatedAt        DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  invoice    Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  investment Investment? @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  userId      String?
+  invoiceId   String?
+  eventType   String
+  title       String
+  description String
+  actor       String   @default("SYSTEM")
+  metadata    String?  
+  timestamp   DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  invoice Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
